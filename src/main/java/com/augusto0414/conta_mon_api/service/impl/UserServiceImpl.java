@@ -13,6 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -22,7 +23,8 @@ public class UserServiceImpl implements IUserService {
 
     private final IUserRepository repository;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-
+    
+    Map<String, Object> claims = new HashMap<>();
 
     public UserServiceImpl (IUserRepository repository){
         this.repository = repository;
@@ -53,6 +55,11 @@ public class UserServiceImpl implements IUserService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new BadCredentialsException("Invalid credentials");
         }
+
+        claims.put("email", user.getEmail());
+        claims.put("userName", user.getUserName());
+
+        String token = jwtService.generateToken(user.getEmail(), claims);
 
         UserResponse response = toSaveUserResponse(user);
 
