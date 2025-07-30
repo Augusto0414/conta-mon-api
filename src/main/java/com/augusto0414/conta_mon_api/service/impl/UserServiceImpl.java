@@ -6,6 +6,7 @@ import com.augusto0414.conta_mon_api.dto.UserResponse;
 import com.augusto0414.conta_mon_api.models.User;
 import com.augusto0414.conta_mon_api.repository.IUserRepository;
 import com.augusto0414.conta_mon_api.service.IUserService;
+import com.augusto0414.conta_mon_api.service.JWTService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -22,12 +23,15 @@ import java.util.Optional;
 public class UserServiceImpl implements IUserService {
 
     private final IUserRepository repository;
+    private final JWTService jwtService;
+
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-    
+
     Map<String, Object> claims = new HashMap<>();
 
-    public UserServiceImpl (IUserRepository repository){
+    public UserServiceImpl (IUserRepository repository, JWTService jwtService){
         this.repository = repository;
+        this.jwtService = jwtService;
     }
 
     @Override
@@ -65,7 +69,7 @@ public class UserServiceImpl implements IUserService {
 
         return Map.of(
                 "response", response,
-                "token", "12233"
+                "token", token
         );
     }
 
