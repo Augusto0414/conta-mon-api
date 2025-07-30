@@ -1,14 +1,20 @@
 package com.augusto0414.conta_mon_api.service.impl;
 
+import com.augusto0414.conta_mon_api.dto.AuthRequest;
 import com.augusto0414.conta_mon_api.dto.UserRequest;
 import com.augusto0414.conta_mon_api.dto.UserResponse;
 import com.augusto0414.conta_mon_api.models.User;
 import com.augusto0414.conta_mon_api.repository.IUserRepository;
 import com.augusto0414.conta_mon_api.service.IUserService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -36,12 +42,29 @@ public class UserServiceImpl implements IUserService {
         return toSaveUserResponse(saved);
     }
 
-    private String hashPassword(String password){
-        return passwordEncoder.encode(password);
+    @Override
+    public Map<String, ?> login(AuthRequest request) {
+        if (request == null) throw new IllegalArgumentException("Request cannot be null");
+
+        Optional<User> userOpt = repository.findByEmail(request.getEmail());
+        if (userOpt.isEmpty()) throw new UsernameNotFoundException("User not found");
+
+        User user = userOpt.get();
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new BadCredentialsException("Invalid credentials");
+        }
+
+        UserResponse response = toSaveUserResponse(user);
+
+        return Map.of(
+                "response", response,
+                "token", "12233"
+        );
     }
 
-    private boolean matchPassword(String plainPassword,String password){
-        return passwordEncoder.matches(plainPassword,password);
+
+    private String hashPassword(String password){
+        return passwordEncoder.encode(password);
     }
 
     private UserResponse toSaveUserResponse(User save){

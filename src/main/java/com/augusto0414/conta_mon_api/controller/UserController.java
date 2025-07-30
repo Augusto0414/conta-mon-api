@@ -1,11 +1,14 @@
 package com.augusto0414.conta_mon_api.controller;
 
+import com.augusto0414.conta_mon_api.dto.AuthRequest;
 import com.augusto0414.conta_mon_api.dto.DefaultResponse;
 import com.augusto0414.conta_mon_api.dto.UserRequest;
 import com.augusto0414.conta_mon_api.dto.UserResponse;
 import com.augusto0414.conta_mon_api.service.IUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 
 @RestController
@@ -15,11 +18,6 @@ public class UserController {
 
     public UserController(IUserService service) {
         this.service = service;
-    }
-
-    @GetMapping
-    public String gellAll(){
-        return "hello";
     }
 
     @PostMapping
@@ -40,5 +38,26 @@ public class UserController {
                 .message("Usuario creado exitosamente")
                 .body(response)
                 .build();
+    }
+
+    @PostMapping("/auth")
+    public DefaultResponse<Map<String, ?>> login(@RequestBody AuthRequest request){
+        Map<String, ?> response = service.login(request);
+        if(response == null){
+            return DefaultResponse.<Map<String, ?>>builder()
+                    .error(true)
+                    .code(HttpStatus.BAD_REQUEST.value())
+                    .message("No hay datos de envio")
+                    .body(null)
+                    .build();
+        }
+
+        return DefaultResponse.<Map<String, ?>>builder()
+                .error(false)
+                .code(HttpStatus.OK.value())
+                .message("Login exitoso")
+                .body(response)
+                .build();
+
     }
 }
