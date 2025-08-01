@@ -7,6 +7,7 @@ import com.augusto0414.conta_mon_api.models.User;
 import com.augusto0414.conta_mon_api.repository.IUserRepository;
 import com.augusto0414.conta_mon_api.service.IUserService;
 import com.augusto0414.conta_mon_api.service.JWTService;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -24,15 +25,18 @@ public class UserServiceImpl implements IUserService {
 
     private final IUserRepository repository;
     private final JWTService jwtService;
+    private final PasswordEncoder passwordEncoder;
 
-    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    public UserServiceImpl(IUserRepository repository,
+                           JWTService jwtService,
+                           PasswordEncoder passwordEncoder) {
+        this.repository = repository;
+        this.jwtService = jwtService;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     Map<String, Object> claims = new HashMap<>();
 
-    public UserServiceImpl (IUserRepository repository, JWTService jwtService){
-        this.repository = repository;
-        this.jwtService = jwtService;
-    }
 
     @Override
     public UserResponse createUser(UserRequest request) {

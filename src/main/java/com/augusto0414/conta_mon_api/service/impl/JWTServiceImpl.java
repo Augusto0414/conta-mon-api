@@ -4,14 +4,15 @@ import com.augusto0414.conta_mon_api.service.JWTService;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.sql.Date;
+import java.util.Base64;
 import java.util.Map;
 
 @Service
@@ -23,12 +24,6 @@ public class JWTServiceImpl implements JWTService {
     @Value("${jwt.expiration}")
     private Long expirationTime;
 
-    private Key key;
-
-    @PostConstruct
-    public void init() {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-    }
 
     @Override
     public String generateToken(String subject, Map<String, Object> claims) {
@@ -37,14 +32,15 @@ public class JWTServiceImpl implements JWTService {
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
-                .signWith(key, SignatureAlgorithm.HS256)
+                .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
+
 
     @Override
     public Boolean isTokenValid(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+            Jwts.parserBuilder().setSigningKey(getKey()).build().parseClaimsJws(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             return false;
@@ -59,11 +55,19 @@ public class JWTServiceImpl implements JWTService {
     @Override
     public String extractSubject(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(key)
+                .setSigningKey(getKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
     }
+
+    private Key getKey() {
+        byte[] keyBytes = Keys.secretKeyFor(SignatureAlgorithm.HS256).getEncoded();
+        String base64Secret = Base64.getEncoder().encodeToString(keyBytes);
+        return Keys.hmacShaKeyFor(base64Secret.getBytes());
+    }
+
+
 }
 

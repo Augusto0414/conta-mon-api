@@ -1,56 +1,39 @@
 package com.augusto0414.conta_mon_api.security;
 
-import com.augusto0414.conta_mon_api.service.JWTService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+//Este metodo va a realizar todos los filtros relacionados al token
+@Component
 public class AuthTokenFilter extends OncePerRequestFilter {
-    private final JWTService jwtService;
-    private final UserDetailsService userDetailsService;
-
-    public AuthTokenFilter(JWTService jwtService, UserDetailsService userDetailsService) {
-        this.jwtService = jwtService;
-        this.userDetailsService = userDetailsService;
-    }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
-        String token = parseJwt(request);
-
-        if (token != null && jwtService.isTokenValid(token)) {
-            String username = jwtService.extractSubject(token);
-
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
-
-            authentication.setDetails(
-                    new WebAuthenticationDetailsSource().buildDetails(request));
-
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        // Lo primero que debemos hacer es obtener el token del request
+        final String token = getTokenRequest(request);
+        if(token == null){
+            filterChain.doFilter(request, response);
+            return;
         }
-
         filterChain.doFilter(request, response);
+
     }
 
-    private String parseJwt(HttpServletRequest request) {
-        String headerAuth = request.getHeader("Authorization");
-        return (headerAuth != null && headerAuth.startsWith("Bearer "))
-                ? headerAuth.substring(7)
-                : null;
+    private String getTokenRequest(HttpServletRequest request) {
+         final String getHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+         if(!StringUtils.hasText(getHeader) || !getHeader.startsWith("Bearer ")) return null;
+         final String [] token = getHeader.trim().split("Bearer");
+         return token.length > 1 ? token[1] : "";
     }
+
+    // filter chain es la cadena de filtros que configuramos previamente
+
 }
